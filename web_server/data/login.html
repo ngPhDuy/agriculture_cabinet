@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel='stylesheet' href='./login.css'>
+    <title>Đăng nhập</title>
+</head>
+<body>
+    <div class="login-container">
+        <h1 class="login-title">Agriculture Cabinet</h1>
+        <form class="login-form">
+            <p class="login-form-title">Đăng nhập</p>
+            <input type='text' placeholder='Tên đăng nhập' 
+            class="login-form-input" name="username">
+            <input type='password' placeholder='Nhập mật khẩu' 
+            class="login-form-input" name="password">
+            <button type="submit" class='login-form-button'>Đăng nhập</button>
+        </form>
+        <div class="message-wrapper">
+            <div class="message">
+                <p></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script defer>
+    const serverAddress = 'http://' + window.location.hostname;
+    document.querySelector(".login-form-button").addEventListener('click', async (e) => {
+        e.preventDefault();
+        const username = document.querySelector("input[name='username']").value;
+        const password = document.querySelector("input[name='password']").value;
+        if (username === '' || password === '') {
+            const pElement = document.querySelector(".message-wrapper p")
+            pElement.innerText = 'Vui lòng nhập đầy đủ thông tin';
+            pElement.style.color = '#f44336';
+            document.querySelector(".message-wrapper").style.display = 'block';
+            setTimeout(() => {
+                document.querySelector(".message-wrapper").style.display = 'none';
+            }, 1000);
+            return;
+        }
+        fetch(serverAddress + '/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 200) {
+                location.href = serverAddress + '/home.html';
+            } else {
+                const pElement = document.querySelector(".message-wrapper p")
+                pElement.innerText = 'Thông tin hoặc tài khoản bị sai';
+                pElement.style.color = '#f44336';
+                document.querySelector(".message-wrapper").style.display = 'block';
+            }
+            setTimeout(() => {
+                document.querySelector(".message-wrapper").style.display = 'none';
+            }, 1000);
+        })
+    });
+</script>

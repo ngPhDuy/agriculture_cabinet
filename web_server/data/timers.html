@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./navbar.css">
+    <link rel="stylesheet" href="./devices.css">
+    <title>Quản lý bộ định thời</title>
+    <style>
+        div.buttons-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: nowrap;
+            width: 40rem;
+            max-width: 400px;
+        }
+        td.buttons-wrapper button {
+            font-size: 1.5rem;
+        }
+        .devices-table th, td {
+            padding: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h3 class="navbar-header">
+            Xin chào, anh ba khía!
+        </h3>
+        <ul>
+            <li><a href="./home.html">Trang chủ</a></li>
+            <li><a href="./devices.html">Thiết bị</a></li>
+            <li class="selected"><a href="">Bộ định thời</a></li>
+        </ul>
+    </nav>
+    <div class="main-content">
+        <h1 class="devices-header">Danh sách bộ định thời</h1>
+        <div class="buttons-wrapper">
+            <button class="add-button">Thêm bộ định thời</button>
+            <button class="multiple-delete-button">Xóa bộ định thời</button>
+        </div>
+        <table class="devices-table" id="table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Định thời</th>
+                    <th>Thiết bị</th>
+                    <th>Thời gian</th>
+                    <th style="white-space:wrap;text-overflow:initial;overflow:initial;">Thời lượng (phút)</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                %TIMERS%
+            </tbody>
+        </table>
+        <div class="pagination" id="pagination">
+            <a href="#" class="prev">&laquo;</a>
+            <a href="#" class="page-num active">1</a>
+            <a href="#" class="page-num">2</a>
+            <a href="#" class="page-num">3</a>
+            <a href="#" class="next">&raquo;</a>
+        </div>
+    </div>
+    <div class="form-wrapper" id="add-devices-form-wrapper">
+        <form id="add-devices-form">
+            <h2>Thêm định thời</h2>
+            <label for="timer-name">Tên định thời:</label>
+            <input type="text" id="timer-name" 
+            name="timer_name" placeholder="Nhập tên timer"
+            require>
+            <label for="device-id">Chọn thiết bị</label>
+            <select id="device-id" name="device_id">
+                %DEVICE_OPTIONS%
+            </select>
+            <label for="start-time">Thời điểm bắt đầu:</label>
+            <input type="time" id="start-time" 
+            name="start_time" require>
+            <label for="duration">Thời lượng (phút):</label>
+            <input type="number" id="duration" name="duration" require>
+            <div class="button-wrapper">
+                <button type="button" class="cancel-button">Hủy</button>
+                <button type="submit" class="submit-button">Thêm</button>
+            </div>
+        </form>
+    </div>
+    <div class="form-wrapper" id="edit-devices-form-wrapper">
+        <form id="edit-devices-form">
+            <h2>Thay đổi thông tin</h2>
+            <label for="timer-name">Tên định thời:</label>
+            <input type="text" id="timer-name" 
+            name="timer_name" placeholder="Nhập tên định thời"
+            require>
+            <label for="device-id">Chọn thiết bị</label>
+            <select id="device-id" name="device_id">
+                %DEVICE_OPTIONS%
+            </select>
+            <label for="start-time">Thời điểm bắt đầu:</label>
+            <input type="time" id="start-time"
+            name="start_time" require>
+            <label for="duration">Thời lượng (phút):</label>
+            <input type="number" id="duration" name="duration" require>
+            <div class="button-wrapper">
+                <button type="button" class="cancel-button">Hủy</button>
+                <button type="submit" class="submit-button">Lưu</button>
+            </div>
+        </form>
+    </div>
+    <div class="confirm-wrapper">
+        <div class="confirm-message">
+            <p>Bạn có chắc chắn muốn xóa timer này không?</p>
+            <div class="button-wrapper">
+                <button class="cancel-button">Hủy</button>
+                <button class="confirm-button">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+    <div class="response-message-wrapper">
+        <div class="response-message">
+            <p></p>
+        </div>
+    </div>
+</body>
+</html>
+<script defer>
+    const serverAddress = 'http://' + window.location.hostname;
+    function pagination() {
+        var rowsPerPage = 6;
+        const table = document.getElementById('table').getElementsByTagName('tbody')[0];
+        const rows = table.getElementsByTagName('tr');
+        const pagination = document.getElementById('pagination');
+        const prev = pagination.getElementsByClassName('prev')[0];
+        const next = pagination.getElementsByClassName('next')[0];
+        let currentPage = 1;
+
+        if (screen.width < 600) {
+            rowsPerPage = 8;
+        }
+    
+        console.log(rows);
+        console.log(rows.length);
+    
+        function displayRows(startIndex, endIndex) {
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = (i >= startIndex && i < endIndex) ? '' : 'none';
+            }
+        }
+    
+        function updatePagination() {
+            console.log('updatePagination');
+            const totalPages = Math.ceil(rows.length / rowsPerPage);
+            if (totalPages === 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+            while (pagination.firstChild) {
+                pagination.removeChild(pagination.firstChild);
+            }
+            
+            pagination.appendChild(prev);
+    
+            for (let i = 1; i <= totalPages; i++) {
+                let page = document.createElement('a');
+                page.href = "#";
+                page.textContent = i;
+                page.classList.add('page-num');
+                if (i === currentPage) {
+                    page.classList.add('active');
+                }
+                page.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayRows((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+                    updatePagination();
+                });
+                pagination.appendChild(page);
+            }
+            
+            pagination.appendChild(next);
+            prev.style.display = currentPage === 1 ? 'none' : '';
+            next.style.display = currentPage === totalPages ? 'none' : '';
+        }
+    
+        prev.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                displayRows((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+                updatePagination();
+            }
+        });
+    
+        next.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage < Math.ceil(rows.length / rowsPerPage)) {
+                currentPage++;
+                displayRows((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+                updatePagination();
+            }
+        });
+    
+        displayRows(0, rowsPerPage);
+        updatePagination();
+    }
+    
+    document.addEventListener('DOMContentLoaded', pagination);
+
+    document.querySelector('#add-devices-form-wrapper form .cancel-button').addEventListener('click', function () {
+        const form = document.querySelector('#add-devices-form-wrapper form');
+        form.reset();
+        document.querySelector('#add-devices-form-wrapper').style.display = 'none';
+    });
+
+    document.querySelector('.add-button').addEventListener('click', () => {
+        document.querySelector('#add-devices-form-wrapper').style.display = 'block';
+        document.querySelector('.response-message-wrapper').style.display = 'none';
+    });
+
+    
+    document.querySelector('#add-devices-form .submit-button').addEventListener('click', (event) => {
+        event.preventDefault()
+
+        const form = document.querySelector('#add-devices-form');
+        const timerName = form.timer_name.value;
+        const deviceId = form.device_id.value;
+        const startTime = form.start_time.value;
+        const duration = form.duration.value;
+        console.log(timerName, deviceId, startTime, duration);
+        if (timerName && deviceId && startTime && duration) {
+            fetch(serverAddress + '/add_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    timer_name: timerName,
+                    device_id: deviceId,
+                    start_time: startTime,
+                    duration: duration
+                })
+            })
+            .then(response => response.json()).then(response => {
+                console.log(response);
+                if (response.status === 200) {
+                    document.querySelector('#add-devices-form').reset();
+                    document.querySelector('#add-devices-form-wrapper').style.display = 'none';
+                    document.querySelector('.response-message').style.color = '#4CAF50';
+                    document.querySelector('.response-message p').textContent = 'Thêm timer thành công';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    document.querySelector('#add-devices-form').reset();
+                    document.querySelector('#add-devices-form-wrapper').style.display = 'none';
+                    document.querySelector('.response-message').style.color = '#f44336';
+                    document.querySelector('.response-message p').textContent = 'Thêm timer thất bại';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                    document.querySelector('.response-message-wrapper').style.display = 'none';
+                }, 1000);
+                }
+            })
+        } else {
+            document.querySelector('#add-devices-form-wrapper').style.display = 'none';
+            document.querySelector('.response-message').style.color = 'var(--primary-color)';
+            document.querySelector('.response-message p').textContent = 'Vui lòng điền đầy đủ 4 thông tin trên';
+            document.querySelector('.response-message-wrapper').style.display = 'block';
+            setTimeout(() => {
+                document.querySelector('.response-message-wrapper').style.display = 'none';
+            }, 1000);
+        }
+    });
+
+    const deleteButtons = document.querySelectorAll('.delete-button');
+    const confirmWrapper = document.querySelector('.confirm-wrapper');
+    const confirmMessage = document.querySelector('.confirm-wrapper .confirm-message');
+    const confirmButton = document.querySelector('.confirm-wrapper .button-wrapper .confirm-button');
+    const cancelButton = document.querySelector('.confirm-wrapper .button-wrapper .cancel-button');
+
+    let deleteId = null;
+    let deleteRow = null;
+    let editId = null;
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function () {
+
+            deleteId = this.getAttribute('timer-id');
+            deleteRow = this.closest('tr');
+
+            confirmWrapper.style.display = 'block';
+            confirmMessage.style.display = 'block';
+        });
+    })
+
+    cancelButton.addEventListener('click', () => {
+        deleteId = null;
+        deleteRow = null;
+        confirmWrapper.style.display = 'none';
+    });
+
+    confirmButton.addEventListener('click', function () {
+        fetch(serverAddress + '/delete_timer?timer_id=' + deleteId , {
+            method: 'GET'
+        }).then(res => res.json()).then(data => {
+            if (data.status === 200) {
+                confirmWrapper.style.display = 'none';
+                document.querySelector('.response-message').style.color = '#4CAF50';
+                document.querySelector('.response-message p').textContent = 'Xóa timer thành công';
+                document.querySelector('.response-message-wrapper').style.display = 'block';
+                setTimeout(() => {
+                document.querySelector('.response-message-wrapper').style.display = 'none';
+                deleteRow.remove();
+                pagination();
+            }, 1000);
+            } else {
+                confirmWrapper.style.display = 'none';
+                document.querySelector('.response-message').style.color = '#f44336';
+                document.querySelector('.response-message p').textContent = 'Xóa timer thất bại';
+                document.querySelector('.response-message-wrapper').style.display = 'block';
+                setTimeout(() => {
+                document.querySelector('.response-message-wrapper').style.display = 'none';
+            }, 1000);
+            }
+        }).catch(err => {
+            confirmWrapper.style.display = 'none';
+            console.log(err);
+        });
+    });
+
+    document.querySelector('#edit-devices-form-wrapper form .cancel-button').addEventListener('click', function () {
+        const form = document.querySelector('#edit-devices-form');
+        form.reset();
+        document.querySelector('#edit-devices-form-wrapper').style.display = 'none';
+    });
+
+    const editButtons = document.querySelectorAll('.edit-button');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const form = document.querySelector('#edit-devices-form');
+            editId = this.getAttribute('timer-id');
+            form.timer_name.value = this.closest('tr').children[1].textContent;
+            form.device_id.value = this.closest('tr').children[2].getAttribute('data-id');
+            form.start_time.value = this.closest('tr').children[3].textContent;
+            form.duration.value = this.closest('tr').children[4].textContent;
+            console.log(form.timer_name.value, form.device_id.value, form.start_time.value, form.duration.value);
+            document.querySelector('#edit-devices-form-wrapper').style.display = 'block';
+        });
+    });
+
+    document.querySelector('#edit-devices-form .submit-button').addEventListener('click', (event) => {
+        event.preventDefault()
+
+        const form = document.querySelector('#edit-devices-form');
+        const timerId = editId;
+        const timerName = form.timer_name.value;
+        const deviceId = form.device_id.value;
+        const startTime = form.start_time.value;
+        const duration = form.duration.value;
+        console.log(timerId, timerName, deviceId, startTime, duration);
+        if (timerName && deviceId && startTime && duration) {
+            fetch(serverAddress + '/update_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    timer_id: timerId,
+                    timer_name: timerName,
+                    device_id: deviceId,
+                    start_time: startTime,
+                    duration: duration
+                })
+            })
+            .then(response => {
+                console.log(response);
+                if (response.status === 200) {
+                    document.querySelector('#edit-devices-form').reset();
+                    document.querySelector('#edit-devices-form-wrapper').style.display = 'none';
+                    document.querySelector('.response-message').style.color = '#4CAF50';
+                    document.querySelector('.response-message p').textContent = 'Sửa thông tin thành công';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                    document.querySelector('.response-message-wrapper').style.display = 'none';
+                    const thisRow = document.querySelector(`.edit-button[timer-id="${timerId}"]`).closest('tr');
+                    thisRow.children[1].textContent = timerName;
+                    thisRow.children[2].textContent = `Thiết bị ${deviceId}`;
+                    thisRow.children[3].textContent = startTime;
+                    thisRow.children[4].textContent = duration;
+                }, 1000);
+                } else {
+                    document.querySelector('#edit-devices-form').reset();
+                    document.querySelector('#edit-devices-form-wrapper').style.display = 'none';
+                    document.querySelector('.response-message').style.color = '#f44336';
+                    document.querySelector('.response-message p').textContent = 'Sửa thông tin thất bại';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                    document.querySelector('.response-message-wrapper').style.display = 'none';
+                }, 1000);
+                }
+            })
+        }
+    });
+
+    const toggleButtons = document.querySelectorAll('.toggle');
+    toggleButtons.forEach(button => {
+        button.addEventListener('change', function () {
+            const timerId = this.getAttribute('timer-id');
+            const state = this.checked ? 1 : 0;
+            console.log(timerId, state);
+            fetch(serverAddress + '/control_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    timer_id: timerId,
+                    state: state
+                })
+            })
+            .then(response => {
+                console.log(response);
+                if (response.status === 200) {
+                    document.querySelector('.response-message').style.color = '#4CAF50';
+                    document.querySelector('.response-message p').textContent = 'Cập nhật trạng thái thành công';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                    document.querySelector('.response-message-wrapper').style.display = 'none';
+                }, 1000);
+                } else {
+                    document.querySelector('.response-message').style.color = '#f44336';
+                    document.querySelector('.response-message p').textContent = 'Cập nhật trạng thái thất bại';
+                    document.querySelector('.response-message-wrapper').style.display = 'block';
+                    setTimeout(() => {
+                    document.querySelector('.response-message-wrapper').style.display = 'none';
+                }, 1000);
+                }
+            })
+        });
+    });
+</script>
